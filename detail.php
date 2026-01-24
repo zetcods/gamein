@@ -1,150 +1,101 @@
 <?php
 session_start();
-include 'config/koneksi.php';
+include 'header.php'; 
 
-// Ambil ID game dari URL
 $id = isset($_GET['id']) ? mysqli_real_escape_string($conn, $_GET['id']) : '';
-$q = mysqli_query($conn, "SELECT * FROM games WHERE id = '$id'");
+
+// Query Crosscheck: Mastika JOIN id_admin (varchar) ke id users (varchar)
+$q = mysqli_query($conn, "SELECT games.*, users.username as nama_admin 
+                          FROM games 
+                          LEFT JOIN users ON games.id_admin = users.id 
+                          WHERE games.id = '$id'");
 $g = mysqli_fetch_assoc($q);
 
-// Balikin ke index kalau ID gak valid
-if (!$g) { header("Location: index.php"); exit; }
+if (!$g) { echo "<script>window.location='index.php';</script>"; exit; }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title><?= $g['judul']; ?> | GameIn</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        :root {
-            --bg-dark: #120b29;
-            --card-dark: #1d1536;
-            --text-gray: #b5b3bc;
-            --accent: #ff3e3e; /* Skema Merah */
-        }
-        body { background-color: var(--bg-dark); color: white; font-family: 'Segoe UI', sans-serif; }
-        
-        /* Navbar Styling (Sama dengan Index) */
-        .navbar { background-color: var(--bg-dark) !important; padding: 20px 0; border-bottom: 1px solid #2b214a; }
-        .nav-link { color: white !important; font-size: 0.95rem; transition: 0.3s; }
-        .nav-link:hover, .nav-link i { color: var(--accent) !important; }
-        
-        .search-bar { background: #fff; border-radius: 20px; padding: 5px 20px; display: flex; align-items: center; width: 280px; }
-        .search-bar input { border: none; outline: none; width: 100%; font-size: 0.85rem; color: #333; }
-
-        /* Detail Styling */
-        .glass-card { background: var(--card-dark); border: none; border-radius: 15px; }
-        .spec-item { background: #2b214a; padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent); }
-        .btn-download { background: var(--accent); color: white; border: none; font-weight: bold; transition: 0.3s; }
-        .btn-download:hover { background: #d32f2f; transform: scale(1.02); color: white; }
-        
-        .dropdown-menu { background: var(--card-dark); border: 1px solid #3c325c; }
-        .dropdown-item { color: white; }
-        .dropdown-item:hover { background: var(--accent); color: white; }
-    </style>
-</head>
-<body>
-
-<nav class="navbar navbar-expand-lg">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="index.php">
-            <h3 class="fw-bold mb-0 text-white">GAME<span style="color:var(--accent)">IN</span></h3>
-        </a>
-        
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav mx-auto">
-                <li class="nav-item"><a class="nav-link" href="index.php"><i class="bi bi-house-door"></i> Home</a></li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-grid"></i> Genre</a>
-                    <ul class="dropdown-menu shadow">
-                        <?php 
-                        $qg = mysqli_query($conn, "SELECT * FROM genres ORDER BY nama_genre ASC");
-                        while($rg = mysqli_fetch_assoc($qg)) : ?>
-                            <li><a class="dropdown-item" href="index.php?genre=<?= urlencode($rg['nama_genre']) ?>"><?= $rg['nama_genre'] ?></a></li>
-                        <?php endwhile; ?>
-                    </ul>
-                </li>
-                <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-fire"></i> Popular</a></li>
-            </ul>
-            
-            <div class="d-flex align-items-center gap-3">
-                <form action="index.php" method="GET" class="search-bar d-none d-md-flex">
-                    <input type="text" name="search" placeholder="Search games...">
-                    <button type="submit" style="border:none; background:none;"><i class="bi bi-search"></i></button>
-                </form>
-
-                <?php if(isset($_SESSION['login'])): 
-                    $id_user = $_SESSION['id_user'];
-                    $user_data = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM users WHERE id='$id_user'"));
-                    $foto_user = (!empty($user_data['foto'])) ? $user_data['foto'] : 'default_user.jpg';
-                ?>
-                    <div class="dropdown">
-                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-                            <img src="assets/images/<?= $foto_user ?>" width="35" height="35" class="rounded-circle border border-danger shadow-sm" style="object-fit: cover;">
-                            <span class="ms-2 text-white small fw-bold d-none d-lg-inline"><?= $user_data['username'] ?></span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow mt-2">
-                            <li><a class="dropdown-item" href="member/profile.php">My Profile</a></li>
-                            <?php if($_SESSION['role'] == 'admin'): ?>
-                                <li><a class="dropdown-item text-info" href="admin/admin_dashboard.php">Admin Panel</a></li>
-                            <?php endif; ?>
-                            <li><hr class="dropdown-divider border-secondary"></li>
-                            <li><a class="dropdown-item text-danger" href="logout.php">Logout</a></li>
-                        </ul>
-                    </div>
-                <?php else: ?>
-                    <a href="auth/login.php" class="btn btn-danger btn-sm px-4 rounded-pill fw-bold" style="background:var(--accent); border:none;">LOGIN</a>
-                <?php endif; ?>
+<div class="container py-5">
+    <div class="row g-4 g-lg-5">
+        <div class="col-lg-5">
+            <div class="sticky-top" style="top: 100px; z-index: 5;">
+                <img src="assets/images/<?= $g['gambar']; ?>" class="img-fluid rounded-4 shadow-lg border border-secondary">
+                <div class="mt-3 d-flex gap-2">
+                    <span class="badge bg-danger px-3 py-2"><?= strtoupper($g['genre']); ?></span>
+                    <span class="badge bg-dark border border-secondary px-3 py-2 text-white">#<?= $g['id']; ?></span>
+                </div>
             </div>
         </div>
-    </div>
-</nav>
 
-<div class="container mt-5 mb-5">
-    <div class="row g-5">
-        <div class="col-md-5 text-center">
-            <img src="assets/images/<?= $g['gambar']; ?>" class="w-100 rounded-3 shadow-lg border border-secondary">
-        </div>
+        <div class="col-lg-7">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="index.php" class="text-danger text-decoration-none small fw-bold">Home</a></li>
+                    <li class="breadcrumb-item active text-white opacity-50 small"><?= $g['judul']; ?></li>
+                </ol>
+            </nav>
 
-        <div class="col-md-7">
-            <div class="glass-card p-4 shadow">
-                <h1 class="fw-bold mb-1"><?= $g['judul']; ?></h1>
-                <p style="color: var(--accent);" class="fw-bold mb-4"><?= $g['genre']; ?></p>
-                
-                <h5 class="fw-bold"><i class="bi bi-card-text me-2"></i>Description</h5>
-                <p class="text-light opacity-75" style="text-align: justify; line-height: 1.6;">
+            <h2 class="fw-bold mb-3 text-white" style="letter-spacing: -1px;"><?= strtoupper($g['judul']); ?></h2>
+            
+            <div class="d-flex flex-wrap gap-4 mb-4 border-bottom border-dark pb-3">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-person-fill text-danger fs-5 me-2"></i>
+                    <div>
+                        <small class="d-block text-muted" style="font-size: 9px; letter-spacing: 1px;">PUBLISHED BY</small>
+                        <span class="text-white fw-bold"><?= $g['nama_admin'] ? $g['nama_admin'] : 'Unknown Admin'; ?></span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-calendar-check text-danger fs-5 me-2"></i>
+                    <div>
+                        <small class="d-block text-muted" style="font-size: 9px; letter-spacing: 1px;">POSTED ON</small>
+                        <span class="text-white fw-bold"><?= date('d M Y', strtotime($g['created_at'])); ?></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="fw-bold text-danger mb-2 small">ABOUT THIS GAME</h6>
+                <p class="text-white lh-base" style="font-size: 0.95rem; opacity: 1 !important;">
                     <?= nl2br($g['deskripsi']); ?>
                 </p>
+            </div>
 
-                <h5 class="fw-bold mt-5 mb-3"><i class="bi bi-cpu me-2"></i>System Requirements</h5>
-                <div class="spec-item">
-                    <small class="text-muted d-block mb-1">Minimum Specs:</small>
-                    <span class="small"><?= $g['requirements']; ?></span>
+            <div class="mb-5">
+                <h6 class="fw-bold text-danger mb-2 small">SYSTEM REQUIREMENTS</h6>
+                <div class="p-3 rounded-3 border border-secondary" style="background: rgba(255,255,255,0.05);">
+                    <div class="text-light small" style="opacity: 0.85;">
+                        <?= nl2br($g['requirements']); ?>
+                    </div>
                 </div>
+            </div>
 
-                <div class="mt-5">
-                    <?php if(isset($_SESSION['login'])): ?>
-                        <a href="<?= $g['download_url']; ?>" target="_blank" class="btn btn-download btn-lg w-100 py-3 shadow">
-                            <i class="bi bi-download me-2"></i> DOWNLOAD GAME
-                        </a>
-                    <?php else: ?>
-                        <div class="bg-dark p-4 rounded text-center border border-danger">
-                            <p class="mb-3 small">Kamu harus login dulu bos buat sikat link download-nya.</p>
-                            <a href="auth/login.php" class="btn btn-danger w-100 fw-bold rounded-pill" style="background:var(--accent); border:none;">LOGIN TO DOWNLOAD</a>
+            <div class="p-4 rounded-4 border border-danger" style="background: #16102b;">
+                <?php if(isset($_SESSION['login'])): ?>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-white">
+                            <h6 class="mb-0 fw-bold">Full Version</h6>
+                            <small class="text-muted">Link Download</small>
                         </div>
-                    <?php endif; ?>
-                </div>
+                        <a href="<?= $g['download_url']; ?>" target="_blank" class="btn btn-danger px-5 fw-bold py-2">
+                            <i class="bi bi-download me-2"></i>DOWNLOAD
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <div class="text-center py-2">
+                        <p class="text-white small mb-3">Please login to access the download link</p>
+                        <a href="auth/login.php" class="btn btn-outline-danger w-100 fw-bold">LOGIN TO UNLOCK</a>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
 
-<footer class="mt-5 py-5 border-top border-secondary text-center text-muted">
-    <p>&copy; 2026 GameIn. All rights reserved.</p>
-</footer>
+<style>
+    /* Paksa warna text-muted biar gak mati di background navy */
+    .text-muted { color: #b5b3bc !important; }
+    .breadcrumb-item + .breadcrumb-item::before { color: #555 !important; }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
