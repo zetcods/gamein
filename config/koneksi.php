@@ -1,9 +1,9 @@
 <?php
-$host = getenv('MYSQLHOST') ?: 'localhost';
-$user = getenv('MYSQLUSER') ?: 'root';
-$pass = getenv('MYSQLPASSWORD') ?: '';
-$db   = getenv('MYSQLDATABASE') ?: 'db_gamein';
-$port = getenv('MYSQLPORT') ?: '3306';
+$host = getenv('MYSQL_HOST') ?: 'localhost';
+$user = getenv('MYSQL_USER') ?: 'root';
+$pass = getenv('MYSQL_PASSWORD') ?: '';
+$db   = getenv('MYSQL_DATABASE') ?: 'db_gamein';
+$port = getenv('MYSQL_PORT') ?: '3306';
 
 $conn = mysqli_connect($host, $user, $pass, $db, $port);
 
